@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: starship-dataplane
+  labels:
+    app: starship-dataplane
+    component: data-plane
+    project: starship
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: starship-dataplane
+  template:
+    metadata:
+      labels:
+        app: starship-dataplane
+        component: data-plane
+    spec:
+      containers:
+        - name: dataplane-worker
+          image: starship-dataplane:v1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: PORT
+              value: "8080"
+            - name: NODE_ROLE
+              value: "data-plane"
+            # Menggunakan Downward API Kubernetes untuk mengambil nama Pod unik secara otomatis
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: CONTROL_PLANE_URL
+              value: "http://starship-controlplane-svc:9090"
+            - name: HEARTBEAT_INTERVAL_SECONDS
+              value: "10"
+          
+          # ========================================================
+          # 1. READINESS PROBE: Cek apakah servis siap melayani trafik
+          # Jika gagal: Trafik dari Ingress TIDAK dialirkan ke pod ini
+          # ========================================================
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+
+          # ========================================================
+          # 2. LIVENESS PROBE: Cek apakah aplikasi masih hidup / bernapas
+          # Jika gagal berturut-turut: Kubernetes akan me-restart container
+          # ========================================================
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: starship-dataplane-svc
+  labels:
+    app: starship-dataplane
+    component: data-plane
+    project: starship
+spec:
+  type: ClusterIP
+  selector:
+    app: starship-dataplane
+  ports:
+    - name: http
+      port: 80         # Port internal yang diakses oleh Ingress Controller
+      targetPort: 8080 # Port aplikasi Golang di dalam Pod

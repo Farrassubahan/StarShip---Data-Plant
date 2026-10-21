@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: starship-dataplane-ingress
+  annotations:
+    # Menginstruksikan NGINX Ingress Controller untuk menangani trafik rute ini
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+    # -------------------------------------------------------------
+    # 1. Rute Khusus Subdomain API: api.starship.local
+    # -------------------------------------------------------------
+    - host: "api.starship.local"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: starship-dataplane-svc
+                port:
+                  number: 80
+
+    # -------------------------------------------------------------
+    # 2. Rute Subdomain Bebas / Wildcard DNS: *.starship.local
+    # Apapun subdomainnya (order.starship.local, kasir.starship.local, dll)
+    # otomatis diteruskan ke Service Data Plane!
+    # -------------------------------------------------------------
+    - host: "*.starship.local"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: starship-dataplane-svc
+                port:
+                  number: 80

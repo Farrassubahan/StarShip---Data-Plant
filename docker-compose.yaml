@@ -1,0 +1,29 @@
+services:
+  # ========================================================
+  # 1. STARSHIP DATA PLANE (Peran Lu)
+  # ========================================================
+  dataplane:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: starship-dataplane:v1.0.0
+    container_name: starship_dataplane
+    ports:
+      - "8085:8080" # Host port 8085 -> Container port 8080 (menghindari port 8080 yang sudah terpakai di sistem Windows)
+    environment:
+      - PORT=8080
+      - NODE_ID=starship-worker-local
+      - NODE_ROLE=data-plane
+      - CONTROL_PLANE_URL=http://controlplane:9090
+      - HEARTBEAT_INTERVAL_SECONDS=5
+    restart: unless-stopped
+
+  # ========================================================
+  # 2. SIMULATOR / PLACEHOLDER CONTROL PLANE (Teman Kelompok)
+  # Untuk pengujian lokal sebelum digabung ke server utama
+  # ========================================================
+  # controlplane:
+  #   image: starship-controlplane:latest
+  #   container_name: starship_controlplane
+  #   ports:
+  #     - "9090:9090"
